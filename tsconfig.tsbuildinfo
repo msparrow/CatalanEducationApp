@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/gameshell.tsx","./src/components/progress.tsx","./src/components/streakbar.tsx","./src/data/culture.ts","./src/data/vocab.ts","./src/pages/culturequiz.tsx","./src/pages/home.tsx","./src/pages/vocabgame.tsx","./src/utils/game.ts","./src/utils/storage.ts"],"version":"5.9.2"}
