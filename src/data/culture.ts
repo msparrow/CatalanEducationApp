@@ -80,57 +80,57 @@ const festivals: Array<[string, string]> = [
 const rivers = ['Ebre (Ebro)','Ter','Llobregat','Segre'] as const;
 const mountains = ['Montserrat','Montseny','Cadí','Puigmal'] as const;
 
-function withDishDistractors(correct: string): string[] {
-  const pool = ['Fried pastry', 'Cold soup', 'Cheese pie', 'Roast lamb', 'Baked potatoes'];
-  const opts = new Set<string>([correct]);
-  for (const d of pool) { if (opts.size >= 4) break; opts.add(d); }
-  return Array.from(opts);
+// Small helpers for sampling distractors
+function shuffle<T>(array: T[]): T[] {
+  for (let i = array.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function sampleFromPool<T>(pool: T[], count: number, exclude: (x: T) => boolean): T[] {
+  const candidates = pool.filter((x) => !exclude(x));
+  shuffle(candidates);
+  return candidates.slice(0, Math.max(0, Math.min(count, candidates.length)));
 }
 
 const out: CultureQuestion[] = [];
 
-// Geography: city -> province (multiple phrasings)
+// Geography: city -> province (single phrasing per concept)
 for (const [city, prov] of cityToProvince) {
   const answers = PROVINCES as unknown as string[];
   const correctIdx = answers.indexOf(prov);
-  [
-    `Which province contains ${city}?`,
-    `In which province is ${city} located?`,
-    `Select the province for ${city}.`,
-  ].forEach((q) => out.push({ topic: 'geography', question: q, options: answers, answerIndex: correctIdx }));
+  const q = `Which province contains ${city}?`;
+  out.push({ topic: 'geography', question: q, options: answers, answerIndex: correctIdx });
 }
 
-// Cuisine: dish -> description (multiple phrasings)
+// Cuisine: dish -> description (single phrasing; distractors from other dishes)
+const allDishDescriptions = dishes.map(([, d]) => d);
 for (const [dish, desc] of dishes) {
-  const answers = withDishDistractors(desc);
-  const correctIdx = answers.indexOf(desc);
-  [
-    `Which description best fits ${dish}?`,
-    `What is ${dish}?`,
-    `Identify ${dish}.`,
-  ].forEach((q) => out.push({ topic: 'cuisine', question: q, options: answers, answerIndex: correctIdx }));
-}
-
-// Culture: figure -> role
-for (const [name, role] of figures) {
-  const answers = [role, 'politician', 'chef', 'mathematician'];
+  const distractors = sampleFromPool(allDishDescriptions, 3, (d) => d === desc);
+  const answers = [desc, ...distractors];
   const correctIdx = 0;
-  [
-    `Who was ${name}?`,
-    `Select the best description of ${name}.`,
-    `${name} is best known as a…`,
-  ].forEach((q) => out.push({ topic: 'culture', question: q, options: answers, answerIndex: correctIdx }));
+  const q = `Which description best fits ${dish}?`;
+  out.push({ topic: 'cuisine', question: q, options: answers, answerIndex: correctIdx });
 }
 
-// Culture/Geography: landmark -> city
+// Culture: figure -> role (single phrasing; distractors from other roles)
+const rolePool = Array.from(new Set(figures.map(([, role]) => role)));
+for (const [name, role] of figures) {
+  const distractors = sampleFromPool(rolePool, 3, (r) => r === role);
+  const answers = [role, ...distractors];
+  const correctIdx = 0;
+  const q = `Who was ${name}?`;
+  out.push({ topic: 'culture', question: q, options: answers, answerIndex: correctIdx });
+}
+
+// Culture/Geography: landmark -> city (single phrasing)
 for (const [name, city] of landmarks) {
   const answers = ['Barcelona','Girona','Tarragona','Lleida'];
   const correctIdx = answers.indexOf(city);
-  [
-    `In which city is ${name}?`,
-    `Select the city for ${name}.`,
-    `Where would you visit ${name}?`,
-  ].forEach((q) => out.push({ topic: 'culture', question: q, options: answers, answerIndex: correctIdx }));
+  const q = `In which city is ${name}?`;
+  out.push({ topic: 'culture', question: q, options: answers, answerIndex: correctIdx });
 }
 
 // Geography: features description
@@ -143,7 +143,7 @@ for (const m of mountains) {
   out.push({ topic: 'geography', question: `${m} is best described as a…`, options: answers, answerIndex: 0 });
 }
 
-// History & calendar
+// History & calendar (single phrasing)
 const commemorations: Array<[string,string]> = [
   ['11 September','National Day of Catalonia (La Diada)'],
   ['23 April','Sant Jordi (books and roses)'],
@@ -152,10 +152,8 @@ const commemorations: Array<[string,string]> = [
 ];
 for (const [date, event] of commemorations) {
   const answers = [event, 'Spanish Constitution Day', 'Andalusian Day', 'Castile Day'];
-  [
-    `What is celebrated on ${date}?`,
-    `Select the celebration for ${date}.`,
-  ].forEach((q) => out.push({ topic: 'history', question: q, options: answers, answerIndex: 0 }));
+  const q = `What is celebrated on ${date}?`;
+  out.push({ topic: 'history', question: q, options: answers, answerIndex: 0 });
 }
 
 // Deduplicate by exact question text
