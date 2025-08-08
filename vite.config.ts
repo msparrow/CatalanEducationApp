@@ -4,6 +4,8 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  // Use relative base so it works on GitHub Pages with hashes
+  base: './',
   resolve: {
     alias: {
       '@components': path.resolve(__dirname, 'src/components'),
